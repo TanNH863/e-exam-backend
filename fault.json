@@ -1,0 +1,61 @@
+{
+  "title": "",
+  "description": "",
+  "duration_minutes": "",
+  "created_by_id": "",
+  "questions": [
+    {
+      "exam_id": "",
+      "question": "Q1",
+      "question_type": "MULTIPLE_CHOICE",
+      "options": [
+        {
+          "question_id": "",
+          "option_text": "A",
+          "is_correct": false
+        },
+        {
+          "question_id": "",
+          "option_text": "B",
+          "is_correct": true
+        },
+        {
+          "question_id": "",
+          "option_text": "C",
+          "is_correct": false
+        },
+        {
+          "question_id": "",
+          "option_text": "D",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question": "Q2",
+      "question_type": "MULTIPLE_CHOICE",
+      "options": [
+        {
+          "question_id": "",
+          "option_text": "A",
+          "is_correct": false
+        },
+        {
+          "question_id": "",
+          "option_text": "B",
+          "is_correct": false
+        },
+        {
+          "question_id": "",
+          "option_text": "C",
+          "is_correct": true
+        },
+        {
+          "question_id": "",
+          "option_text": "D",
+          "is_correct": false
+        }
+      ]
+    }
+  ]
+}

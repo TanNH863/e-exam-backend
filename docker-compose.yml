@@ -1,4 +1,21 @@
 services:
+  web:
+    image: nguyenhuutan080603044/e-exam-frontend:latest
+    container_name: eexam_web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3003
+    command: npm run dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   api:
     image: nguyenhuutan080603044/e-exam-backend:latest
     container_name: eexam_api
@@ -16,8 +33,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: eexam
       POSTGRES_PORT: 5432
-    volumes:
-      - .:/usr/src/app:cached
+      CORS_ORIGINS: "http://localhost:3000"
     command: ["node", "dist/main"]
     restart: unless-stopped
 
@@ -28,8 +44,6 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=eexam
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     ports:
       - '5432:5432'
     healthcheck:

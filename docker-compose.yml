@@ -1,20 +1,33 @@
 services:
+  nginx:
+    image: nginx:latest
+    container_name: eexam_nginx
+    ports:
+      - '8080:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - eexam-network
+    depends_on:
+      - web
+      - api
+
   web:
     image: nguyenhuutan080603044/e-exam-frontend:latest
     container_name: eexam_web
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:3003
+      - NEXT_PUBLIC_API_URL=/api
     command: npm run dev
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - eexam-network
 
   api:
     image: nguyenhuutan080603044/e-exam-backend:latest
@@ -22,20 +35,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "3003:3003"
     environment:
       NODE_ENV: production
       PORT: 3003
-      DATABASE_URL: "postgresql://postgres:postgres@db:5432/eexam"
+      DATABASE_URL: 'postgresql://postgres:postgres@db:5432/eexam'
       POSTGRES_HOST: db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: eexam
       POSTGRES_PORT: 5432
-      CORS_ORIGINS: "http://localhost:3000"
-    command: ["node", "dist/main"]
+    command: ['node', 'dist/main']
     restart: unless-stopped
+    networks:
+      - eexam-network
 
   db:
     image: postgres:17
@@ -44,15 +56,19 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=eexam
-    ports:
-      - '5432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - eexam-network
 
 volumes:
   pgdata:
     driver: local
+
+networks:
+  eexam-network:
+    driver: bridge

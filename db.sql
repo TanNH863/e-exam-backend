@@ -13,6 +13,8 @@ CREATE TYPE question_type AS ENUM
 ('MULTIPLE_CHOICE', 'SHORT_ANSWER', 'MULTIPLE_ANSWER', 'TRUE_FALSE');
 CREATE TYPE submission_status AS ENUM
 ('IN_PROGRESS', 'COMPLETED', 'GRADED');
+CREATE TYPE exam_status AS ENUM
+('DRAFT', 'PUBLISHED', 'COMPLETED');
 
 -- Table to store user information and roles.
 CREATE TABLE users
@@ -32,7 +34,9 @@ CREATE TABLE exams
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(255) NOT NULL,
     description TEXT,
+    start_time TIMESTAMPTZ NOT NULL,
     duration_minutes INTEGER NOT NULL,
+    status exam_status NOT NULL DEFAULT 'DRAFT',
     created_by_id UUID NOT NULL REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

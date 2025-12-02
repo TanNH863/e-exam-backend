@@ -17,17 +17,26 @@ export class ExamService {
   async create(
     createDto: CreateExamDto,
   ): Promise<{ message: string; exam: Exam }> {
-    const { title, description, duration_minutes, created_by_id } = createDto;
+    const {
+      title,
+      description,
+      start_time,
+      duration_minutes,
+      status,
+      created_by_id,
+    } = createDto;
     const query = `
-      INSERT INTO exams (title, description, duration_minutes, created_by_id)
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO exams (title, description, start_time, duration_minutes, status, created_by_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
     try {
       const result = await this.pool.query<Exam>(query, [
         title,
         description ?? null,
+        start_time,
         duration_minutes,
+        status,
         created_by_id,
       ]);
       return { message: 'Exam created successfully', exam: result.rows[0] };

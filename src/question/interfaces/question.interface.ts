@@ -5,10 +5,18 @@ export enum QuestionType {
   TRUE_FALSE = 'TRUE_FALSE',
 }
 
+export interface Option {
+  id: string;
+  question_id: string;
+  option_text: string;
+  is_correct: boolean;
+}
+
 export interface Question {
   id: string;
   exam_id: string;
   question_text: string;
   question_type: QuestionType;
   order: number;
+  options?: Option[];
 }

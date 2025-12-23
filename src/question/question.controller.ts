@@ -23,8 +23,13 @@ export class QuestionController {
   }
 
   @Get()
-  findAll(@Query('examId') examId: string): Promise<Question[]> {
-    return this.questionService.findAll(examId);
+  findAll(): Promise<Question[]> {
+    return this.questionService.findAll();
+  }
+
+  @Get()
+  findAllByExam(@Query('examId') examId: string): Promise<Question[]> {
+    return this.questionService.findAllByExam(examId);
   }
 
   @Get(':id')

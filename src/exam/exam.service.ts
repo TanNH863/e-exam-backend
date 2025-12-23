@@ -9,6 +9,7 @@ import { Pool } from 'pg';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto } from './dto/update-exam.dto';
 import { Exam } from './interfaces/exam.interface';
+import { Question } from '../question/interfaces/question.interface';
 
 @Injectable()
 export class ExamService {
@@ -58,12 +59,27 @@ export class ExamService {
   }
 
   async findOne(id: string): Promise<Exam> {
-    const query = `SELECT * FROM exams WHERE id = $1`;
-    const result = await this.pool.query<Exam>(query, [id]);
-    const exam = result.rows[0];
+    const examQuery = `SELECT * FROM exams WHERE id = $1`;
+    const examResult = await this.pool.query<Exam>(examQuery, [id]);
+    const exam = examResult.rows[0];
     if (!exam) {
       throw new NotFoundException('Exam not found');
     }
+
+    const questionsQuery = `
+      SELECT * FROM questions
+      WHERE exam_id = $1
+      ORDER BY "order" ASC
+    `;
+
+    try {
+      const qResult = await this.pool.query<Question>(questionsQuery, [id]);
+      exam.questions = qResult.rows;
+    } catch (error) {
+      console.error('Error fetching questions for exam:', error);
+      throw new InternalServerErrorException('Failed to fetch questions');
+    }
+
     return exam;
   }
 

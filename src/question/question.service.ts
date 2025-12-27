@@ -15,7 +15,7 @@ export class QuestionService {
   constructor(@Inject('PG_POOL') private readonly pool: Pool) {}
 
   async create(createDto: CreateQuestionDto): Promise<Question> {
-    const { exam_id, question_text, question_type, order, options } = createDto;
+    const { question_text, question_type, options } = createDto;
     const id = uuidv4();
 
     const client = await this.pool.connect();
@@ -24,17 +24,15 @@ export class QuestionService {
       await client.query('BEGIN');
 
       const insertQ = `
-        INSERT INTO questions (id, exam_id, question_text, question_type, "order")
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO questions (id, question_text, question_type)
+        VALUES ($1, $2, $3)
         RETURNING *
       `;
 
       const qResult = await client.query<Question>(insertQ, [
         id,
-        exam_id,
         question_text,
         question_type,
-        order,
       ]);
 
       const createdQuestion = qResult.rows[0];
@@ -78,7 +76,7 @@ export class QuestionService {
   }
 
   async findAll(): Promise<Question[]> {
-    const query = `SELECT * FROM questions ORDER BY "order" ASC`;
+    const query = `SELECT * FROM questions`;
 
     try {
       const result = await this.pool.query<Question>(query);
@@ -100,9 +98,11 @@ export class QuestionService {
 
   async findAllByExam(examId: string): Promise<Question[]> {
     const query = `
-      SELECT * FROM questions 
-      WHERE exam_id = $1 
-      ORDER BY "order" ASC
+      SELECT q.*, eq.order 
+      FROM questions q
+      JOIN exam_questions eq ON q.id = eq.question_id
+      WHERE eq.exam_id = $1
+      ORDER BY eq.order ASC;
     `;
 
     try {

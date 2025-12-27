@@ -23,10 +23,6 @@ export class OptionDto {
 }
 
 export class CreateQuestionDto {
-  @IsUUID()
-  @IsNotEmpty()
-  exam_id: string;
-
   @IsString()
   @IsNotEmpty()
   question_text: string;
@@ -34,10 +30,6 @@ export class CreateQuestionDto {
   @IsEnum(QuestionType)
   @IsNotEmpty()
   question_type: QuestionType;
-
-  @IsNumber()
-  @IsNotEmpty()
-  order: number;
 
   @IsOptional()
   @IsArray()

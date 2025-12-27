@@ -46,14 +46,23 @@ COMMENT ON TABLE exams IS 'Contains the core information about each exam.';
 CREATE TABLE questions
 (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    exam_id UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
     question_text TEXT NOT NULL,
-    question_type question_type NOT NULL,
-    "order" INTEGER NOT NULL,
-    -- A unique constraint on exam_id and order ensures question order is unique per exam.
-    UNIQUE(exam_id, "order")
+    question_type question_type NOT NULL
 );
 COMMENT ON TABLE questions IS 'Stores individual questions linked to an exam.';
+
+-- [NEW] Junction table to link Exams and Questions (Many-to-Many).
+CREATE TABLE exam_questions
+(
+    exam_id UUID NOT NULL REFERENCES exams(id) ON DELETE CASCADE,
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    "order" INTEGER NOT NULL,
+    
+    PRIMARY KEY (exam_id, question_id),
+    -- Ensure question order is unique within a specific exam
+    UNIQUE(exam_id, "order") 
+);
+COMMENT ON TABLE exam_questions IS 'Links questions to exams and defines their specific order within that exam.';
 
 -- Table for the options available for multiple-choice questions.
 CREATE TABLE options
@@ -111,7 +120,10 @@ COMMENT ON TABLE student_multi_answers IS 'A junction table to support multiple 
 -- Create indexes on frequently queried columns (foreign keys) to improve performance.
 
 CREATE INDEX idx_exams_created_by ON exams(created_by_id);
-CREATE INDEX idx_questions_exam_id ON questions(exam_id);
+-- New indexes for the junction table
+CREATE INDEX idx_exam_questions_exam_id ON exam_questions(exam_id);
+CREATE INDEX idx_exam_questions_question_id ON exam_questions(question_id);
+
 CREATE INDEX idx_options_question_id ON options(question_id);
 CREATE INDEX idx_exam_submissions_student_id ON exam_submissions(student_id);
 CREATE INDEX idx_student_answers_submission_id ON student_answers(submission_id);

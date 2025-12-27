@@ -14,9 +14,7 @@ export interface Option {
 
 export interface Question {
   id: string;
-  exam_id: string;
   question_text: string;
   question_type: QuestionType;
-  order: number;
   options?: Option[];
 }

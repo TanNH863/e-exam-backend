@@ -14,7 +14,9 @@ import { v4 as uuidv4 } from 'uuid';
 export class QuestionService {
   constructor(@Inject('PG_POOL') private readonly pool: Pool) {}
 
-  async create(createDto: CreateQuestionDto): Promise<Question> {
+  async create(
+    createDto: CreateQuestionDto,
+  ): Promise<{ message: string; question: Question }> {
     const { question_text, question_type, options } = createDto;
     const id = uuidv4();
 
@@ -63,9 +65,12 @@ export class QuestionService {
 
       // Attach options if any and return
       return {
-        ...createdQuestion,
-        options: insertedOptions.length ? insertedOptions : undefined,
-      } as Question;
+        message: 'Question created successfully',
+        question: {
+          ...createdQuestion,
+          options: insertedOptions.length ? insertedOptions : undefined,
+        },
+      };
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('Error creating question:', error);

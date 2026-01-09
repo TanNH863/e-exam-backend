@@ -18,7 +18,9 @@ export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
   @Post()
-  create(@Body() createQuestionDto: CreateQuestionDto): Promise<Question> {
+  create(
+    @Body() createQuestionDto: CreateQuestionDto,
+  ): Promise<{ message: string; question: Question }> {
     return this.questionService.create(createQuestionDto);
   }
 

@@ -67,9 +67,10 @@ export class ExamService {
     }
 
     const questionsQuery = `
-      SELECT * FROM questions
-      WHERE exam_id = $1
-      ORDER BY "order" ASC
+      SELECT q.* FROM questions q
+      JOIN exam_questions eq ON q.id = eq.question_id
+      WHERE eq.exam_id = $1
+      ORDER BY eq."order" ASC
     `;
 
     try {

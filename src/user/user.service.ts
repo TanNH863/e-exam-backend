@@ -2,6 +2,7 @@ import {
   Injectable,
   Inject,
   ConflictException,
+  NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Pool } from 'pg';
@@ -55,5 +56,29 @@ export class UserService {
         'An error occurred while creating the user.',
       );
     }
+  }
+
+  async findAll(): Promise<User[]> {
+    const query = `SELECT id, email, full_name, role, created_at FROM users ORDER BY created_at DESC`;
+    try {
+      const result = await this.pool.query<User>(query);
+      return result.rows;
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw new InternalServerErrorException('Failed to fetch users');
+    }
+  }
+
+  async findOne(id: string): Promise<User> {
+    const query = `SELECT id, email, full_name, role, created_at FROM users WHERE id = $1`;
+
+    const result = await this.pool.query<User>(query, [id]);
+    const user = result.rows[0];
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 }

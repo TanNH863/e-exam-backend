@@ -4,6 +4,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
 import { Pool } from 'pg';
 import { Question } from './interfaces/question.interface';
 import { CreateQuestionDto } from './dto/create-question.dto';
@@ -75,6 +76,67 @@ export class QuestionService {
       await client.query('ROLLBACK');
       console.error('Error creating question:', error);
       throw new InternalServerErrorException('Failed to create question');
+    } finally {
+      client.release();
+    }
+  }
+
+  async bulkCreate(fileBuffer: Buffer | ArrayBuffer): Promise<{ message: string; }> {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(fileBuffer as any);
+    const worksheet = workbook.worksheets[0];
+
+    const client = await this.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      worksheet.eachRow({ includeEmpty: false }, async (row, rowNumber) => {
+        if (rowNumber === 1) return;
+
+        const question_text = row.getCell(1).value?.toString() || '';
+        const question_type = row.getCell(2).value?.toString() || '';
+        const optionA = row.getCell(3).value?.toString() || '';
+        const optionB = row.getCell(4).value?.toString() || '';
+        const optionC = row.getCell(5).value?.toString() || '';
+        const optionD = row.getCell(6).value?.toString() || '';
+        const correctAnswer = row.getCell(7).value?.toString() || '';
+
+        const questionId = uuidv4();
+
+        // Insert question
+        const qRes = await client.query(
+          `INSERT INTO questions (id, question_text, question_type)
+           VALUES ($1, $2, $3) RETURNING *`,
+          [questionId, question_text, question_type],
+        );
+
+        // Insert options
+        const options = [
+          { text: optionA, isCorrect: correctAnswer === 'A' },
+          { text: optionB, isCorrect: correctAnswer === 'B' },
+          { text: optionC, isCorrect: correctAnswer === 'C' },
+          { text: optionD, isCorrect: correctAnswer === 'D' },
+        ];
+
+        for (const opt of options) {
+          if (opt.text) {
+            await client.query(
+              `INSERT INTO options (id, question_id, option_text, is_correct)
+               VALUES ($1, $2, $3, $4)`,
+              [uuidv4(), questionId, opt.text, opt.isCorrect],
+            );
+          }
+        }
+
+      });
+
+      await client.query('COMMIT');
+      return { message: 'Bulk insert successful' };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Bulk insert error:', error);
+      throw new InternalServerErrorException('Failed to bulk insert questions');
     } finally {
       client.release();
     }

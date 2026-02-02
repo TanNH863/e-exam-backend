@@ -1,29 +1,32 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './interfaces/user.interface';
 
-@Controller('user')
+@Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  async createUser(
-    @Body() createUserDto: CreateUserDto,
-  ): Promise<Omit<User, 'password_hash'>> {
-    const newUser = await this.userService.create(createUserDto);
+  @Post('user')
+  async createUser(@Body() createUserDto: CreateUserDto): Promise<{ message: string; user: Omit<User, 'password_hash'> }> {
+    const { message, user } = await this.userService.create(createUserDto);
 
-    const { password_hash, ...result } = newUser;
-    return result;
+    const { password_hash, ...result } = user;
+    return { message, user: result };
   }
 
-  @Get()
+  @Get('users')
   findAll(): Promise<User[]> {
     return this.userService.findAll();
   }
 
-  @Get(':id')
+  @Get('user/:id')
   findOne(@Param('id') id: string): Promise<User> {
     return this.userService.findOne(id);
+  }
+
+  @Delete('user/:id')
+  remove(@Param('id') id: string): Promise<{ message: string }> {
+    return this.userService.remove(id);
   }
 }

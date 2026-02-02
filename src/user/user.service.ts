@@ -17,7 +17,7 @@ export class UserService {
   // We will set up this provider in the module
   constructor(@Inject('PG_POOL') private readonly pool: Pool) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<{ message: string; user: User }> {
     const { email, password, full_name, role } = createUserDto;
 
     // 1. Hash the password
@@ -42,9 +42,8 @@ export class UserService {
       const result = await this.pool.query<User>(query, values);
       const newUser = result.rows[0];
 
-      // 5. Return the new user
-      // (Note: In a real app, you'd return a DTO that omits the password_hash)
-      return newUser;
+      // 5. Return the new user with a success message
+      return { message: 'User created successfully', user: newUser };
     } catch (error) {
       // Handle potential duplicate email error (PostgreSQL error code '23505')
       if (error.code === '23505') {
@@ -80,5 +79,19 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async remove(id: string): Promise<{ message: string }> {
+    const query = `DELETE FROM users WHERE id = $1 RETURNING id`;
+    try {
+      const result = await this.pool.query(query, [id]);
+      if (result.rowCount === 0) {
+        throw new NotFoundException('User not found');
+      }
+      return { message: 'User deleted successfully!' };
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new InternalServerErrorException('Failed to delete user');
+    }
   }
 }

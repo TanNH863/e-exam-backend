@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Pool } from 'pg';
 import { CreateExamDto } from './dto/create-exam.dto';
-import { UpdateExamDto } from './dto/update-exam.dto';
+import { UpdateExamDto, UpdateQuestionsFromExamDto } from './dto/update-exam.dto';
 import { Exam } from './interfaces/exam.interface';
 import { Question } from '../question/interfaces/question.interface';
 
@@ -84,7 +84,7 @@ export class ExamService {
     return exam;
   }
 
-  async update(id: string, updateDto: UpdateExamDto): Promise<Exam> {
+  async updateExamInfo(id: string, updateDto: UpdateExamDto): Promise<Exam> {
     // Build dynamic SET clause
     const sets: string[] = [];
     const values: any[] = [];
@@ -114,6 +114,62 @@ export class ExamService {
     } catch (error) {
       console.error('Error updating exam:', error);
       throw new InternalServerErrorException('Failed to update exam');
+    }
+  }
+
+  async updateQuestionListInExam(
+    examId: string,
+    dto: UpdateQuestionsFromExamDto
+  ): Promise<{ message: string }> {
+    try {
+      // Start a transaction
+      const client = await this.pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        // Verify exam exists
+        const examResult = await client.query('SELECT id FROM exams WHERE id = $1', [examId]);
+        if (examResult.rows.length === 0) {
+          throw new NotFoundException('Exam not found');
+        }
+
+        // Delete existing exam_questions mappings
+        await client.query('DELETE FROM exam_questions WHERE exam_id = $1', [examId]);
+
+        // Insert new exam_questions mappings with order
+        for (let i = 0; i < dto.question_ids.length; i++) {
+          const questionId = dto.question_ids[i];
+          // Verify question exists
+          const questionResult = await client.query(
+            'SELECT id FROM questions WHERE id = $1',
+            [questionId],
+          );
+          if (questionResult.rows.length === 0) {
+            throw new NotFoundException(`Question with id ${questionId} not found`);
+          }
+
+          await client.query(
+            `INSERT INTO exam_questions (exam_id, question_id, "order")
+             VALUES ($1, $2, $3)`,
+            [examId, questionId, i],
+          );
+        }
+
+        await client.query('COMMIT');
+        await client.query(`UPDATE exams SET status = $1 WHERE id = $2`, [dto.status, examId]);
+        return { message: 'Exam questions updated successfully' };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error updating exam questions:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to update exam questions');
     }
   }
 

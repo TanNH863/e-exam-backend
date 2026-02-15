@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nguyenhuutan080603044/e-exam-frontend:latest
+        env:
+        - name: NODE_ENV
+          value: "development"
+        - name: NEXT_PUBLIC_API_URL
+          value: "/api"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    app: web

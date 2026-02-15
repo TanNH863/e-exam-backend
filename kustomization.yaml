@@ -1,0 +1,6 @@
+resources:
+  - deploy-db.yaml
+  - deploy-api.yaml # Depends on DB
+  - deploy-web.yaml # Depends on API
+  - nginx-configmap.yaml # Deploy this before nginx itself
+  - deploy-nginx.yaml

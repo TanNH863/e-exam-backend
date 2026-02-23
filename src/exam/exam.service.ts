@@ -75,7 +75,20 @@ export class ExamService {
 
     try {
       const qResult = await this.pool.query<Question>(questionsQuery, [id]);
-      exam.questions = qResult.rows;
+      const questions = qResult.rows;
+
+      // Attach options for each question
+      for (const q of questions) {
+        try {
+          const oRes = await this.pool.query(`SELECT * FROM options WHERE question_id = $1`, [q.id]);
+          if (oRes?.rows?.length) q.options = oRes.rows;
+        } catch (err) {
+          console.error(`Error fetching options for question ${q.id}:`, err);
+          throw new InternalServerErrorException('Failed to fetch question options');
+        }
+      }
+
+      exam.questions = questions;
     } catch (error) {
       console.error('Error fetching questions for exam:', error);
       throw new InternalServerErrorException('Failed to fetch questions');

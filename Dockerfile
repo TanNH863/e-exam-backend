@@ -1,28 +1,28 @@
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
 # Copy only dependency files first (better caching)
-COPY package*.json ./
+COPY package*.json bun.lock ./
 
-# Install dependencies (including dev for build)
-RUN npm ci
+# Install dependencies with Bun
+RUN bun install
 
 # Copy source code
 COPY . .
 
-# Build the NestJS app
-RUN npm run build
+# Build NestJS app
+RUN bun run build
 
 # Stage 2: Production
-FROM node:20-alpine AS production
+FROM oven/bun:1 AS production
 
 WORKDIR /app
 
 # Copy only production dependencies
-COPY package*.json ./
-RUN npm ci --only=production
+COPY package*.json bun.lock ./
+RUN bun install --production
 
 # Copy built app from builder
 COPY --from=builder /app/dist ./dist

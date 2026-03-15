@@ -44,7 +44,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: eexam
       POSTGRES_PORT: 5432
-    command: ['node', 'dist/main']
+    command: sh -c "npx prisma migrate dev --name init && npx prisma migrate deploy && npx prisma generate && node dist/main"
     restart: unless-stopped
     networks:
       - eexam-network

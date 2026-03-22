@@ -1,21 +1,30 @@
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL;
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  constructor() {
+    const adapter = new PrismaPg({ 
+      connectionString: process.env.DATABASE_URL 
+    });
 
-const poolConfig = connectionString
-  ? { connectionString }
-  : {
-      user: process.env.POSTGRES_USER || 'postgres',
-      host: process.env.POSTGRES_HOST || 'localhost' || 'db',
-      database: process.env.POSTGRES_DB || 'eexam',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
-      port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-    };
+    super({ adapter });
+  }
 
-export const dbProvider = {
-  provide: 'PG_POOL',
-  useValue: new Pool(poolConfig),
+  async onModuleInit() {
+    await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+}
+
+export const prismaProvider = {
+  provide: 'PRISMA_SERVICE',
+  useClass: PrismaService,
 };

@@ -2,7 +2,7 @@ import { Controller, Post, Body, Get, Param, Put, Delete } from '@nestjs/common'
 import { ExamService } from './exam.service';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto, UpdateQuestionsFromExamDto } from './dto/update-exam.dto';
-import { Exam } from './interfaces/exam.interface';
+import { Exam } from '@prisma/client';
 
 @Controller()
 export class ExamController {

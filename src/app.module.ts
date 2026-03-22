@@ -8,6 +8,7 @@ import { UserService } from './user/user.service';
 import { UserController } from './user/user.controller';
 import { UserModule } from './user/user.module';
 import { ExamService } from './exam/exam.service';
+import { ExamController } from './exam/exam.controller';
 import { ExamModule } from './exam/exam.module';
 import { DatabaseModule } from './database.module';
 import { QuestionService } from './question/question.service';
@@ -23,7 +24,12 @@ import { QuestionModule } from './question/question.module';
     ExamModule,
     QuestionModule,
   ],
-  controllers: [AppController, UserController, QuestionController],
+  controllers: [
+    AppController,
+    UserController,
+    ExamController,
+    QuestionController
+  ],
   providers: [
     AppService,
     AuthService,

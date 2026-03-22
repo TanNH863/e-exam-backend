@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -26,77 +25,91 @@ enum SubmissionStatus {
   GRADED
 }
 
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+}
+
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
+  id           String           @id @default(uuid())
+  email        String           @unique
   passwordHash String
-  fullName    String
-  role        UserRole
-  createdAt   DateTime @default(now())
-  exams       Exam[]   @relation("ExamCreator")
-  submissions ExamSubmission[]
+  fullName     String
+  role         UserRole
+  createdAt    DateTime         @default(now())
+  exams        Exam[]           @relation("ExamCreator")
+  submissions  ExamSubmission[]
 }
 
 model Exam {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  startTime   DateTime
-  duration    Int
-  status      ExamStatus @default(DRAFT)
-  createdBy   User      @relation("ExamCreator", fields: [createdById], references: [id])
-  createdById String
-  questions   ExamQuestion[]
-  createdAt   DateTime @default(now())
+  id              String           @id @default(uuid())
+  title           String
+  description     String?
+  startTime       DateTime
+  duration        Int
+  status          ExamStatus       @default(DRAFT)
+  createdBy       User             @relation("ExamCreator", fields: [createdById], references: [id])
+  createdById     String
+  questions       ExamQuestion[]
+  createdAt       DateTime         @default(now())
+  examSubmissions ExamSubmission[]
 }
 
 model Question {
-  id            String       @id @default(uuid())
-  questionText  String
-  questionType  QuestionType
-  examQuestions ExamQuestion[]
-  options       Option[]
+  id             String          @id @default(uuid())
+  questionText   String
+  questionType   QuestionType
+  examQuestions  ExamQuestion[]
+  options        Option[]
+  studentAnswers StudentAnswer[]
 }
 
 model ExamQuestion {
   examId     String
   questionId String
   order      Int
-  exam       Exam    @relation(fields: [examId], references: [id])
+  exam       Exam     @relation(fields: [examId], references: [id])
   question   Question @relation(fields: [questionId], references: [id])
+
   @@id([examId, questionId])
   @@unique([examId, order])
 }
 
 model Option {
-  id          String   @id @default(uuid())
-  questionId  String
-  optionText  String
-  isCorrect   Boolean  @default(false)
-  question    Question @relation(fields: [questionId], references: [id])
+  id                  String               @id @default(uuid())
+  questionId          String
+  optionText          String
+  isCorrect           Boolean              @default(false)
+  question            Question             @relation(fields: [questionId], references: [id])
+  studentMultiAnswers StudentMultiAnswer[]
 }
 
 model ExamSubmission {
-  id          String   @id @default(uuid())
-  examId      String
-  studentId   String
-  status      SubmissionStatus @default(IN_PROGRESS)
-  score       Float?
-  startedAt   DateTime @default(now())
-  completedAt DateTime?
-  exam        Exam    @relation(fields: [examId], references: [id])
-  student     User    @relation(fields: [studentId], references: [id])
+  id             String           @id @default(uuid())
+  examId         String
+  studentId      String
+  status         SubmissionStatus @default(IN_PROGRESS)
+  score          Float?
+  startedAt      DateTime         @default(now())
+  completedAt    DateTime?
+  exam           Exam             @relation(fields: [examId], references: [id])
+  student        User             @relation(fields: [studentId], references: [id])
+  studentAnswers StudentAnswer[]
+
   @@unique([examId, studentId])
 }
 
 model StudentAnswer {
-  id                String   @id @default(uuid())
-  submissionId     String
-  questionId       String
-  chosenOptionId   String?
-  shortAnswerText  String?
-  submission       ExamSubmission @relation(fields: [submissionId], references: [id])
-  question         Question       @relation(fields: [questionId], references: [id])
+  id                  String               @id @default(uuid())
+  submissionId        String
+  questionId          String
+  chosenOptionId      String?
+  shortAnswerText     String?
+  submission          ExamSubmission       @relation(fields: [submissionId], references: [id])
+  question            Question             @relation(fields: [questionId], references: [id])
+  studentMultiAnswers StudentMultiAnswer[]
+
   @@unique([submissionId, questionId])
 }
 
@@ -105,5 +118,6 @@ model StudentMultiAnswer {
   chosenOptionId  String
   studentAnswer   StudentAnswer @relation(fields: [studentAnswerId], references: [id])
   option          Option        @relation(fields: [chosenOptionId], references: [id])
+
   @@id([studentAnswerId, chosenOptionId])
 }

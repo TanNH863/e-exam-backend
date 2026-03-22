@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { QuestionService } from './question.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { Question } from './interfaces/question.interface';
+import { Question } from '@prisma/client';
 
 @Controller()
 export class QuestionController {

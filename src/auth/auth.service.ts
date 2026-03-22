@@ -1,5 +1,5 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Pool } from 'pg';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../database.provider';
 import jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
 
@@ -8,20 +8,15 @@ const JWT_SECRET =
 
 @Injectable()
 export class AuthService {
-  constructor(@Inject('PG_POOL') private readonly pool: Pool) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async validateUser(email: string, password: string) {
-    const query = `
-      SELECT id, email, password_hash, full_name, role 
-      FROM users 
-      WHERE email = $1
-    `;
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
-    const result = await this.pool.query(query, [email]);
-    const user = result.rows[0];
-
-    if (user && (await bcrypt.compare(password, user.password_hash))) {
-      const { password_hash, ...userInfo } = user;
+    if (user && (await bcrypt.compare(password, user.passwordHash))) {
+      const { passwordHash, ...userInfo } = user;
       return userInfo;
     }
     return null;

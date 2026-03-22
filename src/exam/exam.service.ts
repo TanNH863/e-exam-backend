@@ -1,46 +1,33 @@
 import {
   Injectable,
-  Inject,
   NotFoundException,
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Pool } from 'pg';
+import { PrismaService } from '../database.provider';
 import { CreateExamDto } from './dto/create-exam.dto';
 import { UpdateExamDto, UpdateQuestionsFromExamDto } from './dto/update-exam.dto';
-import { Exam } from './interfaces/exam.interface';
-import { Question } from '../question/interfaces/question.interface';
+import { Exam, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ExamService {
-  constructor(@Inject('PG_POOL') private readonly pool: Pool) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    createDto: CreateExamDto,
-  ): Promise<{ message: string; exam: Exam }> {
-    const {
-      title,
-      description,
-      start_time,
-      duration_minutes,
-      status,
-      created_by_id,
-    } = createDto;
-    const query = `
-      INSERT INTO exams (title, description, start_time, duration_minutes, status, created_by_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-    `;
+  async create(createDto: CreateExamDto): Promise<{ message: string; exam: Exam }> {
+    const { title, description, start_time, duration_minutes, status, created_by_id } = createDto;
+
     try {
-      const result = await this.pool.query<Exam>(query, [
-        title,
-        description ?? null,
-        start_time,
-        duration_minutes,
-        status,
-        created_by_id,
-      ]);
-      return { message: 'Exam created successfully', exam: result.rows[0] };
+      const exam = await this.prisma.exam.create({
+        data: {
+          title,
+          description: description ?? null,
+          startTime: new Date(start_time),
+          duration: duration_minutes,
+          status,
+          createdById: created_by_id,
+        },
+      });
+      return { message: 'Exam created successfully', exam };
     } catch (error) {
       console.error('Error creating exam:', error);
       throw new InternalServerErrorException('Failed to create exam');
@@ -48,10 +35,16 @@ export class ExamService {
   }
 
   async findAll(): Promise<Exam[]> {
-    const query = `SELECT * FROM exams ORDER BY created_at DESC`;
     try {
-      const result = await this.pool.query<Exam>(query);
-      return result.rows;
+      return await this.prisma.exam.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          questions: {
+            include: { question: { include: { options: true } } },
+            orderBy: { order: 'asc' },
+          },
+        },
+      });
     } catch (error) {
       console.error('Error fetching exams:', error);
       throw new InternalServerErrorException('Failed to fetch exams');
@@ -59,72 +52,60 @@ export class ExamService {
   }
 
   async findOne(id: string): Promise<Exam> {
-    const examQuery = `SELECT * FROM exams WHERE id = $1`;
-    const examResult = await this.pool.query<Exam>(examQuery, [id]);
-    const exam = examResult.rows[0];
-    if (!exam) {
-      throw new NotFoundException('Exam not found');
-    }
-
-    const questionsQuery = `
-      SELECT q.* FROM questions q
-      JOIN exam_questions eq ON q.id = eq.question_id
-      WHERE eq.exam_id = $1
-      ORDER BY eq."order" ASC
-    `;
-
     try {
-      const qResult = await this.pool.query<Question>(questionsQuery, [id]);
-      const questions = qResult.rows;
+      const exam = await this.prisma.exam.findUnique({
+        where: { id },
+        include: {
+          questions: {
+            include: { question: { include: { options: true } } },
+            orderBy: { order: 'asc' },
+          },
+          createdBy: true,
+        },
+      });
 
-      // Attach options for each question
-      for (const q of questions) {
-        try {
-          const oRes = await this.pool.query(`SELECT * FROM options WHERE question_id = $1`, [q.id]);
-          if (oRes?.rows?.length) q.options = oRes.rows;
-        } catch (err) {
-          console.error(`Error fetching options for question ${q.id}:`, err);
-          throw new InternalServerErrorException('Failed to fetch question options');
-        }
+      if (!exam) {
+        throw new NotFoundException('Exam not found');
       }
 
-      exam.questions = questions;
+      return exam;
     } catch (error) {
-      console.error('Error fetching questions for exam:', error);
-      throw new InternalServerErrorException('Failed to fetch questions');
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error fetching exam:', error);
+      throw new InternalServerErrorException('Failed to fetch exam');
     }
-
-    return exam;
   }
 
-  async updateExamInfo(id: string, updateDto: UpdateExamDto): Promise<Exam> {
-    // Build dynamic SET clause
-    const sets: string[] = [];
-    const values: any[] = [];
-    let idx = 1;
-    if (updateDto.title !== undefined) {
-      sets.push(`title = $${idx++}`);
-      values.push(updateDto.title);
-    }
-    if (updateDto.description !== undefined) {
-      sets.push(`description = $${idx++}`);
-      values.push(updateDto.description);
-    }
-    if (updateDto.duration_minutes !== undefined) {
-      sets.push(`duration_minutes = $${idx++}`);
-      values.push(updateDto.duration_minutes);
-    }
-    if (sets.length === 0) {
-      throw new BadRequestException('No fields provided for update');
-    }
-    const query = `UPDATE exams SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`;
-    values.push(id);
+  async updateExamInfo(id: string, updateDto: UpdateExamDto): Promise<any> {
     try {
-      const result = await this.pool.query<Exam>(query, values);
-      const updated = result.rows[0];
-      if (!updated) throw new NotFoundException('Exam not found');
-      return updated;
+      const updateData: Prisma.ExamUpdateInput = {};
+
+      if (updateDto.title !== undefined) {
+        updateData.title = updateDto.title;
+      }
+      if (updateDto.description !== undefined) {
+        updateData.description = updateDto.description;
+      }
+      if (updateDto.duration_minutes !== undefined) {
+        updateData.duration = updateDto.duration_minutes;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        throw new BadRequestException('No fields provided for update');
+      }
+
+      return await this.prisma.exam.update({
+        where: { id },
+        data: updateData,
+      });
     } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Exam not found');
+      }
+      if (error instanceof BadRequestException) throw error;
+      
       console.error('Error updating exam:', error);
       throw new InternalServerErrorException('Failed to update exam');
     }
@@ -135,48 +116,53 @@ export class ExamService {
     dto: UpdateQuestionsFromExamDto
   ): Promise<{ message: string }> {
     try {
-      // Start a transaction
-      const client = await this.pool.connect();
-      try {
-        await client.query('BEGIN');
+      // Verify exam exists
+      const exam = await this.prisma.exam.findUnique({
+        where: { id: examId },
+      });
 
-        // Verify exam exists
-        const examResult = await client.query('SELECT id FROM exams WHERE id = $1', [examId]);
-        if (examResult.rows.length === 0) {
-          throw new NotFoundException('Exam not found');
-        }
+      if (!exam) {
+        throw new NotFoundException('Exam not found');
+      }
 
+      // Use Prisma transaction
+      await this.prisma.$transaction(async (tx) => {
         // Delete existing exam_questions mappings
-        await client.query('DELETE FROM exam_questions WHERE exam_id = $1', [examId]);
+        await tx.examQuestion.deleteMany({
+          where: { examId },
+        });
 
-        // Insert new exam_questions mappings with order
+        // Verify all questions exist and create new mappings
         for (let i = 0; i < dto.question_ids.length; i++) {
           const questionId = dto.question_ids[i];
-          // Verify question exists
-          const questionResult = await client.query(
-            'SELECT id FROM questions WHERE id = $1',
-            [questionId],
-          );
-          if (questionResult.rows.length === 0) {
-            throw new NotFoundException(`Question with id ${questionId} not found`);
+
+          const question = await tx.question.findUnique({
+            where: { id: questionId },
+          });
+
+          if (!question) {
+            throw new NotFoundException(
+              `Question with id ${questionId} not found`
+            );
           }
 
-          await client.query(
-            `INSERT INTO exam_questions (exam_id, question_id, "order")
-             VALUES ($1, $2, $3)`,
-            [examId, questionId, i],
-          );
+          await tx.examQuestion.create({
+            data: {
+              examId,
+              questionId,
+              order: i,
+            },
+          });
         }
 
-        await client.query('COMMIT');
-        await client.query(`UPDATE exams SET status = $1 WHERE id = $2`, [dto.status, examId]);
-        return { message: 'Exam questions updated successfully' };
-      } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
-      } finally {
-        client.release();
-      }
+        // Update exam status
+        await tx.exam.update({
+          where: { id: examId },
+          data: { status: dto.status as any },
+        });
+      });
+
+      return { message: 'Exam questions updated successfully' };
     } catch (error) {
       console.error('Error updating exam questions:', error);
       if (error instanceof NotFoundException) {
@@ -187,12 +173,15 @@ export class ExamService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const query = `DELETE FROM exams WHERE id = $1 RETURNING id`;
     try {
-      const result = await this.pool.query(query, [id]);
-      if (result.rowCount === 0) {
+      const exam = await this.prisma.exam.delete({
+        where: { id },
+      });
+
+      if (!exam) {
         throw new NotFoundException('Exam not found');
       }
+
       return { message: 'Exam deleted successfully!' };
     } catch (error) {
       console.error('Error deleting exam:', error);

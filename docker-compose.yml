@@ -18,7 +18,7 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=/api
-    command: npm run dev
+    command: npm run start
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000']
@@ -30,7 +30,7 @@ services:
       - eexam-network
 
   api:
-    image: nguyenhuutan080603044/e-exam-backend:latest
+    image: nguyenhuutan080603044/e-exam-backend:prisma
     container_name: eexam_api
     depends_on:
       db:
@@ -44,7 +44,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: eexam
       POSTGRES_PORT: 5432
-    command: sh -c "npx prisma migrate dev --name init && npx prisma migrate deploy && npx prisma generate && node dist/main"
+    command: sh -c "bunx prisma migrate deploy && bun dist/src/main.js"
     restart: unless-stopped
     networks:
       - eexam-network
@@ -56,6 +56,10 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=eexam
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s

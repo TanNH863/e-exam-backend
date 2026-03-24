@@ -30,7 +30,7 @@ services:
       - eexam-network
 
   api:
-    image: nguyenhuutan080603044/e-exam-backend:prisma
+    image: nguyenhuutan080603044/e-exam-backend:latest
     container_name: eexam_api
     depends_on:
       db:
@@ -44,7 +44,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: eexam
       POSTGRES_PORT: 5432
-    command: sh -c "bunx prisma migrate deploy && bun dist/src/main.js"
+    command: sh -c "bunx prisma migrate deploy && bunx prisma db seed && bun dist/src/main.js"
     restart: unless-stopped
     networks:
       - eexam-network

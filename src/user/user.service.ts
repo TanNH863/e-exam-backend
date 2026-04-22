@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as ExcelJS from 'exceljs';
 import { v4 as uuidv4 } from 'uuid';
 import { User, UserRole } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -42,6 +43,42 @@ export class UserService {
       }
       console.error('Error creating user:', error);
       throw new InternalServerErrorException('An error occurred while creating the user.');
+    }
+  }
+
+  async bulkCreate(fileBuffer: Buffer | ArrayBuffer): Promise<{ message: string; }> {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(fileBuffer as any);
+    const worksheet = workbook.getWorksheet('Users');
+    
+    try {
+      worksheet?.eachRow({ includeEmpty: false }, async (row, rowNumber) => {
+        if (rowNumber === 1) return;
+        const email = row.getCell(1).value?.toString() || '';
+        const password = row.getCell(2).value?.toString() || '';
+        const full_name = row.getCell(3).value?.toString() || '';
+        const role = row.getCell(4).value?.toString() || '';
+
+        const saltRounds = 10;
+        const password_hash = await bcrypt.hash(password, saltRounds);
+        const created_at = new Date();
+        
+        // Insert user
+        await this.prisma.user.create({
+          data: {
+            id: uuidv4(),
+            email: email,
+            passwordHash: password_hash,
+            fullName: full_name,
+            role: UserRole[role as keyof typeof UserRole] || UserRole.STUDENT,
+            createdAt: created_at,
+          },
+        });
+      })
+        return { message: 'Bulk insert successful' };
+    } catch (error) {
+        console.error('Bulk insert error:', error);
+        throw new InternalServerErrorException('Failed to bulk insert users');
     }
   }
 

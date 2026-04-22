@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from '@prisma/client';
@@ -6,6 +7,12 @@ import { User } from '@prisma/client';
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Post('users/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async upload(@UploadedFile() file: Express.Multer.File) {
+    return this.userService.bulkCreate(file.buffer);
+  }
 
   @Post('user')
   async createUser(@Body() createUserDto: CreateUserDto): Promise<{ message: string; user: Omit<User, 'passwordHash'> }> {

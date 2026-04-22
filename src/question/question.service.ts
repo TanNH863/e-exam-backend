@@ -46,9 +46,10 @@ export class QuestionService {
   async bulkCreate(fileBuffer: Buffer | ArrayBuffer): Promise<{ message: string; }> {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(fileBuffer as any);
-    const worksheet = workbook.worksheets[0];
+    // const worksheet = workbook.worksheets[0];
+    const worksheet = workbook.getWorksheet('Questions');
     try {
-      worksheet.eachRow({ includeEmpty: false }, async (row, rowNumber) => {
+      worksheet?.eachRow({ includeEmpty: false }, async (row, rowNumber) => {
         if (rowNumber === 1) return;
         const question_text = row.getCell(1).value?.toString() || '';
         const question_type = row.getCell(2).value?.toString() || '';
@@ -60,7 +61,7 @@ export class QuestionService {
         const questionId = uuidv4();
 
         // Insert question
-        const qRes = await this.prisma.question.create({
+        await this.prisma.question.create({
           data: {
             id: questionId,
             questionText: question_text,

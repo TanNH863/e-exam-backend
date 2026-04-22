@@ -9,7 +9,7 @@ import { Question } from '@prisma/client';
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
-  @Post('upload')
+  @Post('questions/upload')
   @UseInterceptors(FileInterceptor('file'))
   async upload(@UploadedFile() file: Express.Multer.File) {
     return this.questionService.bulkCreate(file.buffer);

@@ -6,116 +6,156 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum UserRole {
-  STUDENT
-  TEACHER
-  ADMIN
+model ExamStatus {
+  id     Int    @id
+  status String @db.VarChar(63)
+  exams  Exam[]
 }
 
-enum QuestionType {
-  MULTIPLE_CHOICE
-  SHORT_ANSWER
-  MULTIPLE_ANSWER
-  TRUE_FALSE
+model QuestionType {
+  id        Int        @id
+  type      String     @db.VarChar(63)
+  questions Question[]
 }
 
-enum SubmissionStatus {
-  IN_PROGRESS
-  COMPLETED
-  GRADED
+model SubmissionStatus {
+  id          Int              @id
+  status      String           @db.VarChar(63)
+  submissions ExamSubmission[]
 }
 
-enum ExamStatus {
-  DRAFT
-  PUBLISHED
-  COMPLETED
-}
-
+// Stores user accounts and their roles within the platform.
 model User {
-  id           String           @id @default(uuid())
+  id           String   @id @db.VarChar(128)
+  prefix       String?  @db.VarChar(10)
   email        String           @unique
-  passwordHash String
   fullName     String
-  role         UserRole
-  createdAt    DateTime         @default(now())
-  exams        Exam[]           @relation("ExamCreator")
-  submissions  ExamSubmission[]
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  admin   Admin?
+  student Student?
+  teacher Teacher?
 }
 
+model Admin {
+  id   String @id @db.VarChar(128)
+  user User   @relation(fields: [id], references: [id])
+}
+
+model Student {
+  id          String           @id @db.VarChar(128)
+  user        User             @relation(fields: [id], references: [id])
+  submissions ExamSubmission[]
+}
+
+model Teacher {
+  id    String @id @db.VarChar(128)
+  user  User   @relation(fields: [id], references: [id])
+  exams Exam[]
+}
+
+// Contains the core information about each exam.
 model Exam {
-  id              String           @id @default(uuid())
+  id              String         @id @default(uuid()) @db.Uuid
   title           String
   description     String?
   startTime       DateTime
   duration        Int
-  status          ExamStatus       @default(DRAFT)
-  createdBy       User             @relation("ExamCreator", fields: [createdById], references: [id])
+  status          Int
   createdById     String
-  questions       ExamQuestion[]
-  createdAt       DateTime         @default(now())
-  examSubmissions ExamSubmission[]
+  createdAt       DateTime       @default(now())
+
+  statusRef     ExamStatus       @relation(fields: [status], references: [id], onDelete: Cascade)
+  createdBy     Teacher?         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  examQuestions ExamQuestion[]
+  submissions   ExamSubmission[]
+
+  @@index([createdById], name: "idx_exams_created_by")
 }
 
+// Stores individual questions linked to an exam.
 model Question {
-  id             String          @id @default(uuid())
+  id             String          @id @default(uuid()) @db.Uuid
   questionText   String
-  questionType   QuestionType
+  questionType   Int
+
+  typeRef        QuestionType    @relation(fields: [questionType], references: [id])
   examQuestions  ExamQuestion[]
   options        Option[]
   studentAnswers StudentAnswer[]
 }
 
+// Links questions to exams and defines their specific order within that exam.
 model ExamQuestion {
-  examId     String
-  questionId String
+  examId     String   @db.Uuid
+  questionId String   @db.Uuid
   order      Int
   exam       Exam     @relation(fields: [examId], references: [id])
   question   Question @relation(fields: [questionId], references: [id])
 
   @@id([examId, questionId])
   @@unique([examId, order])
+  @@index([examId], name: "idx_exam_questions_examId")
+  @@index([questionId], name: "idx_exam_questions_questionId")
 }
 
+// Stores the answer choices for multiple-choice or multiple-answer questions.
 model Option {
-  id                  String               @id @default(uuid())
-  questionId          String
+  id                  String               @id @default(uuid()) @db.Uuid
+  questionId          String               @db.Uuid
   optionText          String
   isCorrect           Boolean              @default(false)
+
   question            Question             @relation(fields: [questionId], references: [id])
+  studentAnswers      StudentAnswer[]
   studentMultiAnswers StudentMultiAnswer[]
+
+  @@index([questionId], name: "idx_options_questionId")
 }
 
+// Tracks the state and result of a student's attempt at an exam.
 model ExamSubmission {
-  id             String           @id @default(uuid())
-  examId         String
-  studentId      String
-  status         SubmissionStatus @default(IN_PROGRESS)
-  score          Float?
+  id             String           @id @default(uuid()) @db.Uuid
+  examId         String           @db.Uuid
+  studentId      String           @db.VarChar(128)
+  status         Int
+  score          Float?           @db.Real
   startedAt      DateTime         @default(now())
   completedAt    DateTime?
+
   exam           Exam             @relation(fields: [examId], references: [id])
-  student        User             @relation(fields: [studentId], references: [id])
+  student        Student          @relation(fields: [studentId], references: [id])
+  statusRef      SubmissionStatus @relation(fields: [status], references: [id], onDelete: Cascade)
   studentAnswers StudentAnswer[]
 
   @@unique([examId, studentId])
+  @@index([studentId], name: "idx_exam_submissions_studentId")
 }
 
+// Records the actual answers given by a student for each question.
 model StudentAnswer {
-  id                  String               @id @default(uuid())
-  submissionId        String
-  questionId          String
-  chosenOptionId      String?
+  id                  String  @id @default(uuid()) @db.Uuid
+  submissionId        String  @db.Uuid
+  questionId          String  @db.Uuid
+  chosenOptionId      String? @db.Uuid
   shortAnswerText     String?
+
   submission          ExamSubmission       @relation(fields: [submissionId], references: [id])
   question            Question             @relation(fields: [questionId], references: [id])
-  studentMultiAnswers StudentMultiAnswer[]
+  chosenOption        Option?              @relation(fields: [chosenOptionId], references: [id], onDelete: SetNull)
+  multiAnswers        StudentMultiAnswer[]
 
   @@unique([submissionId, questionId])
+  @@index([submissionId], name: "idx_student_answers_submissionId")
+  @@index([questionId], name: "idx_student_answers_questionId")
 }
 
+// A junction table to support multiple selected options for a single question.
 model StudentMultiAnswer {
-  studentAnswerId String
-  chosenOptionId  String
+  studentAnswerId String @db.Uuid
+  chosenOptionId  String @db.Uuid
+
   studentAnswer   StudentAnswer @relation(fields: [studentAnswerId], references: [id])
   option          Option        @relation(fields: [chosenOptionId], references: [id])
 

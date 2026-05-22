@@ -10,7 +10,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { QuestionType } from '../interfaces/question.interface';
 
 export class OptionDto {
   @IsString()
@@ -27,9 +26,9 @@ export class CreateQuestionDto {
   @IsNotEmpty()
   question_text: string;
 
-  @IsEnum(QuestionType)
+  @IsNumber()
   @IsNotEmpty()
-  question_type: QuestionType;
+  question_type: number;
 
   @IsOptional()
   @IsArray()

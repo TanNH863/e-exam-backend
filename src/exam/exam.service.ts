@@ -39,7 +39,7 @@ export class ExamService {
       return await this.prisma.exam.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
-          questions: {
+          examQuestions: {
             include: { question: { include: { options: true } } },
             orderBy: { order: 'asc' },
           },
@@ -56,7 +56,7 @@ export class ExamService {
       const exam = await this.prisma.exam.findUnique({
         where: { id },
         include: {
-          questions: {
+          examQuestions: {
             include: { question: { include: { options: true } } },
             orderBy: { order: 'asc' },
           },

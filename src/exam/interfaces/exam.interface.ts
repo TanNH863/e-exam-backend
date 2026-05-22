@@ -6,14 +6,8 @@ export interface Exam {
   description: string | null;
   start_time: Date;
   duration_minutes: number;
-  status: ExamStatus;
+  status: number;
   created_by_id: string;
   created_at: Date;
   questions?: Question[];
-}
-
-export enum ExamStatus {
-  DRAFT = 'DRAFT',
-  PUBLISHED = 'PUBLISHED',
-  COMPLETED = 'COMPLETED',
 }

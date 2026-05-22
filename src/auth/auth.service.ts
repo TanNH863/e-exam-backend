@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database.provider';
 import jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
+import dotenv from "dotenv";
 
-const JWT_SECRET =
-  '07eca1c31cfa39375fc3f130442d4d7c816d14bafc5b683feb73df0e2d7eb06e';
+dotenv.config();
 
 @Injectable()
 export class AuthService {
@@ -23,12 +23,12 @@ export class AuthService {
   }
 
   signToken(payload: object, expiresIn = '1h'): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn });
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
   }
 
   verifyToken(token: string): any | null {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      return jwt.verify(token, process.env.JWT_SECRET);
     } catch {
       return null;
     }

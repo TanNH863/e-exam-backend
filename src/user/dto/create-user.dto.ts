@@ -3,11 +3,19 @@ import {
   IsString,
   IsNotEmpty,
   MinLength,
-  IsEnum,
+  IsNumber,
 } from 'class-validator';
 import { UserRole } from '../interfaces/user.interface';
 
 export class CreateUserDto {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsString()
+  @IsNotEmpty()
+  prefix: string;
+  
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -21,7 +29,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   full_name: string;
 
-  @IsEnum(UserRole)
+  @IsNumber()
   @IsNotEmpty()
   role: UserRole;
 }

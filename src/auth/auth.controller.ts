@@ -33,8 +33,8 @@ export class AuthController {
     }
     const token = this.authService.signToken({
       sub: user.id,
-      email: user.email,
-      role: user.role,
+      prefix: user.prefix,
+      email: user.email
     });
 
     res.cookie('access_token', token, {
@@ -60,7 +60,6 @@ export class AuthController {
       user: {
         id: user.id,
         email: user.email,
-        role: user.role,
         full_name: user.fullName
       }
     };

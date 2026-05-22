@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import { Question, QuestionType } from '@prisma/client';
+import { Question } from '@prisma/client';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -52,7 +52,7 @@ export class QuestionService {
       worksheet?.eachRow({ includeEmpty: false }, async (row, rowNumber) => {
         if (rowNumber === 1) return;
         const question_text = row.getCell(1).value?.toString() || '';
-        const question_type = row.getCell(2).value?.toString() || '';
+        const question_type = row.getCell(2).value as number || 1;
         const optionA = row.getCell(3).value?.toString() || '';
         const optionB = row.getCell(4).value?.toString() || '';
         const optionC = row.getCell(5).value?.toString() || '';
@@ -65,7 +65,7 @@ export class QuestionService {
           data: {
             id: questionId,
             questionText: question_text,
-            questionType: QuestionType[question_type as keyof typeof QuestionType] || QuestionType.MULTIPLE_CHOICE,
+            questionType: question_type
           },
         });
 
@@ -151,7 +151,7 @@ export class QuestionService {
     try {
       const updatedQuestion = await this.prisma.question.update({
         where: { id },
-        data: updateDto,
+        data: updateDto as any,
       });
       return updatedQuestion;
     } catch (error) {

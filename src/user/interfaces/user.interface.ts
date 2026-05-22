@@ -7,9 +7,10 @@ export enum UserRole {
 
 export interface User {
   id: string;
+  prefix: string;
   email: string;
   password_hash: string;
   full_name: string;
-  role: UserRole;
+  role: number;
   created_at: Date;
 }

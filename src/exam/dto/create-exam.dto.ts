@@ -4,9 +4,7 @@ import {
   IsOptional,
   IsNumber,
   IsUUID,
-  IsEnum,
 } from 'class-validator';
-import { ExamStatus } from '../interfaces/exam.interface';
 
 export class CreateExamDto {
   @IsString()
@@ -24,9 +22,9 @@ export class CreateExamDto {
   @IsNotEmpty()
   duration_minutes: number;
 
-  @IsEnum(ExamStatus)
+  @IsNumber()
   @IsNotEmpty()
-  status: ExamStatus;
+  status: number;
 
   @IsUUID()
   @IsNotEmpty()

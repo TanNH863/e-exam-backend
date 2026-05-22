@@ -6,8 +6,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as ExcelJS from 'exceljs';
-import { v4 as uuidv4 } from 'uuid';
-import { User, UserRole } from '@prisma/client';
+import { User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from '../database.provider';
 
@@ -16,22 +15,20 @@ export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto): Promise<{ message: string; user: User }> {
-    const { email, password, full_name, role } = createUserDto;
+    const { id, prefix, email, password, full_name, role } = createUserDto;
 
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(password, saltRounds);
-
-    const id = uuidv4();
     const created_at = new Date();
 
     try {
       const newUser = await this.prisma.user.create({
         data: {
           id,
+          prefix,
           email,
           passwordHash: password_hash,
           fullName: full_name,
-          role: UserRole[role as keyof typeof UserRole] || UserRole.STUDENT,
           createdAt: created_at,
         },
       });
@@ -54,10 +51,11 @@ export class UserService {
     try {
       worksheet?.eachRow({ includeEmpty: false }, async (row, rowNumber) => {
         if (rowNumber === 1) return;
-        const email = row.getCell(1).value?.toString() || '';
-        const password = row.getCell(2).value?.toString() || '';
-        const full_name = row.getCell(3).value?.toString() || '';
-        const role = row.getCell(4).value?.toString() || '';
+        const id = row.getCell(1).value?.toString() || '';
+        const prefix = row.getCell(2).value?.toString() || '';
+        const email = row.getCell(3).value?.toString() || '';
+        const password = row.getCell(4).value?.toString() || '';
+        const full_name = row.getCell(5).value?.toString() || '';
 
         const saltRounds = 10;
         const password_hash = await bcrypt.hash(password, saltRounds);
@@ -66,14 +64,37 @@ export class UserService {
         // Insert user
         await this.prisma.user.create({
           data: {
-            id: uuidv4(),
+            id: id,
+            prefix: prefix,
             email: email,
             passwordHash: password_hash,
             fullName: full_name,
-            role: UserRole[role as keyof typeof UserRole] || UserRole.STUDENT,
             createdAt: created_at,
           },
         });
+
+        // Insert role-specific record
+        if (prefix === 'TC') {
+          await this.prisma.teacher.upsert({
+            where: { id: id },
+            update: {},
+            create: { id: id },
+          });
+        }
+        if (prefix === 'AD') {
+          await this.prisma.admin.upsert({
+            where: { id: id },
+            update: {},
+            create: { id: id },
+          });
+        }
+        if (prefix === 'ST') {
+          await this.prisma.student.upsert({
+            where: { id: id },
+            update: {},
+            create: { id: id },
+          });
+        }
       })
         return { message: 'Bulk insert successful' };
     } catch (error) {
@@ -83,17 +104,17 @@ export class UserService {
   }
 
   async findAll(): Promise<User[]> {
-      try {
-        return await this.prisma.user.findMany({
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
-      } catch (error) {
-          console.error('Error fetching users:', error);
-          throw new InternalServerErrorException('Failed to fetch users');
-      }
+    try {
+      return await this.prisma.user.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        throw new InternalServerErrorException('Failed to fetch users');
     }
+  }
 
   async findOne(id: string): Promise<User> {
     try {
@@ -112,9 +133,7 @@ export class UserService {
 
   async remove(id: string): Promise<{ message: string }> {
     try {
-      const user = await this.prisma.user.delete({
-        where: { id },
-      });
+      await this.prisma.user.delete({ where: { id } });
       return { message: 'User deleted successfully!' };
     } catch (error) {
       if (error.code === 'P2025') {

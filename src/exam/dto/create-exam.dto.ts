@@ -3,7 +3,6 @@ import {
   IsString,
   IsOptional,
   IsNumber,
-  IsUUID,
 } from 'class-validator';
 
 export class CreateExamDto {
@@ -26,7 +25,7 @@ export class CreateExamDto {
   @IsNotEmpty()
   status: number;
 
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   created_by_id: string;
 }

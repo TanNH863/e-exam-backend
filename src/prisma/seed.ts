@@ -37,14 +37,15 @@ async function seedData() {
   ];
 
   for (const { model, data } of seedData) {
-    data.map(item => 
-      prisma[model].upsert({
+    data.map(async (item) => 
+      await prisma[model].upsert({
         where: { id: item.id },
         update: {},
         create: item
-    }));
+      })
+    );
     console.log(`✅ Seeded ${model} successfully!`);
-  }  
+  }
 }
 
 async function main() {

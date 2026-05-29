@@ -1,4 +1,4 @@
-import { IsArray, IsString, IsOptional } from 'class-validator';
+import { IsArray, IsString, IsOptional, IsNumber } from 'class-validator';
 
 export class UpdateExamDto {
   @IsOptional()
@@ -19,6 +19,6 @@ export class UpdateQuestionsFromExamDto {
   question_ids: string[];
 
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsNumber()
+  status?: number;
 }

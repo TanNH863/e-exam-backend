@@ -57,7 +57,10 @@ export class ExamService {
         where: { id },
         include: {
           examQuestions: {
-            include: { question: { include: { options: true } } },
+            select: {
+              order: true,
+              question: { include: { options: true } },
+            },
             orderBy: { order: 'asc' },
           },
           createdBy: true,
@@ -68,7 +71,13 @@ export class ExamService {
         throw new NotFoundException('Exam not found');
       }
 
-      return exam;
+      // Return examQuestions as an array of question objects only
+      const questionsOnly = (exam.examQuestions ?? []).map((eq) => eq.question);
+
+      return {
+        ...exam,
+        examQuestions: questionsOnly as any,
+      } as any;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -158,7 +167,7 @@ export class ExamService {
         // Update exam status
         await tx.exam.update({
           where: { id: examId },
-          data: { status: dto.status as any },
+          data: { status: dto.status },
         });
       });
 

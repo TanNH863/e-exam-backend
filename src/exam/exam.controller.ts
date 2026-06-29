@@ -18,6 +18,11 @@ export class ExamController {
     return this.examService.findAll();
   }
 
+  @Get('exams/upcoming')
+  getUpcomingExams(): Promise<Exam[]> {
+    return this.examService.getUpcomingExams();
+  }
+
   @Get('exam/:id')
   findOne(@Param('id') id: string): Promise<Exam> {
     return this.examService.findOne(id);

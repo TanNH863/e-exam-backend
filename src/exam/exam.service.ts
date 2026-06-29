@@ -150,9 +150,7 @@ export class ExamService {
           });
 
           if (!question) {
-            throw new NotFoundException(
-              `Question with id ${questionId} not found`
-            );
+            throw new NotFoundException(`Question with id ${questionId} not found`);
           }
 
           await tx.examQuestion.create({
@@ -195,6 +193,30 @@ export class ExamService {
     } catch (error) {
       console.error('Error deleting exam:', error);
       throw new InternalServerErrorException('Failed to delete exam');
+    }
+  }
+
+  async getUpcomingExams() {
+    try {
+      const now = new Date();
+
+      return await this.prisma.exam.findMany({
+        where: {
+          startTime: {
+            gte: now,
+          },
+        },
+        orderBy: { startTime: 'asc' },
+        include: {
+          examQuestions: {
+            include: { question: { include: { options: true } } },
+            orderBy: { order: 'asc' },
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching upcoming exams:', error);
+      throw new InternalServerErrorException('Failed to fetch upcoming exams');
     }
   }
 }

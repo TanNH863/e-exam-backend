@@ -20,12 +20,24 @@ export class QuestionController {
     return this.questionService.create(createQuestionDto);
   }
 
+  // @Get('questions')
+  // async findAll(@Query('examId') examId?: string): Promise<Question[]> {
+  //   if (examId) {
+  //     return this.questionService.findAllByExam(examId);
+  //   }
+  //   return this.questionService.findAll();
+  // }
+
   @Get('questions')
-  async findAll(@Query('examId') examId?: string): Promise<Question[]> {
+  async findAll(
+    @Query('examId') examId?: string,
+    @Query('pageNumber') pageNumber: number = 1,
+    @Query('pageSize') pageSize: number = 10
+  ): Promise<Question[]> {
     if (examId) {
       return this.questionService.findAllByExam(examId);
     }
-    return this.questionService.findAll();
+    return this.questionService.findAll(pageNumber, pageSize);
   }
 
   @Get('question/:id')

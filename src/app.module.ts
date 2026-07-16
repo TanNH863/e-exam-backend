@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CqrsModule } from '@nestjs/cqrs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthService } from './auth/auth.service';
@@ -17,6 +18,7 @@ import { QuestionModule } from './question/question.module';
 
 @Module({
   imports: [
+    CqrsModule.forRoot(),
     ConfigModule.forRoot(),
     DatabaseModule,
     AuthModule,

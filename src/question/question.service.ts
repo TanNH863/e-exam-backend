@@ -96,9 +96,22 @@ export class QuestionService {
     }
   }
 
-  async findAll(): Promise<Question[]> {
+  // async findAll(): Promise<Question[]> {
+  //   try {
+  //     return await this.prisma.question.findMany({
+  //       include: { options: true },
+  //     });
+  //   } catch (error) {
+  //     console.error('Error fetching questions:', error);
+  //     throw new InternalServerErrorException('Failed to fetch questions');
+  //   }
+  // }
+
+  async findAll(pageNumber: number, pageSize: number): Promise<Question[]> {
     try {
       return await this.prisma.question.findMany({
+        skip: pageNumber * pageSize,
+        take: pageSize,
         include: { options: true },
       });
     } catch (error) {

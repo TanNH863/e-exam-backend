@@ -45,6 +45,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: eexam
       POSTGRES_PORT: 5432
+      JWT_SECRET: '07eca1c31cfa39375fc3f130442d4d7c816d14bafc5b683feb73df0e2d7eb06e'
     command: sh -c "bunx prisma migrate deploy && bunx prisma db seed && bun dist/src/main.js"
     restart: unless-stopped
     networks:

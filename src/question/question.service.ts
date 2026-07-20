@@ -109,8 +109,11 @@ export class QuestionService {
 
   async findAll(pageNumber: number, pageSize: number): Promise<Question[]> {
     try {
+      // first page -> page 0
+      // first page: pageNumber = 1 -> skip: 0 * pageSize = 0
+      // second page: pageNumber = 2 -> skip: 1 * pageSize = pageSize
       return await this.prisma.question.findMany({
-        skip: pageNumber * pageSize,
+        skip: (pageNumber - 1) * pageSize,
         take: pageSize,
         include: { options: true },
       });

@@ -103,9 +103,27 @@ export class UserService {
     }
   }
 
-  async findAll(): Promise<User[]> {
+  // async findAll(): Promise<User[]> {
+  //   try {
+  //     return await this.prisma.user.findMany({
+  //       orderBy: {
+  //         createdAt: 'desc',
+  //       },
+  //     });
+  //   } catch (error) {
+  //       console.error('Error fetching users:', error);
+  //       throw new InternalServerErrorException('Failed to fetch users');
+  //   }
+  // }
+
+  async findAll(pageNumber: number, pageSize: number): Promise<User[]> {
     try {
+      // first page -> page 0
+      // first page: pageNumber = 1 -> skip: 0 * pageSize = 0
+      // second page: pageNumber = 2 -> skip: 1 * pageSize = pageSize
       return await this.prisma.user.findMany({
+        skip: (pageNumber - 1) * pageSize,
+        take: pageSize,
         orderBy: {
           createdAt: 'desc',
         },

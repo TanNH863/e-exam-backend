@@ -96,36 +96,35 @@ export class QuestionService {
     }
   }
 
-  // async findAll(): Promise<Question[]> {
-  //   try {
-  //     return await this.prisma.question.findMany({
-  //       include: { options: true },
-  //     });
-  //   } catch (error) {
-  //     console.error('Error fetching questions:', error);
-  //     throw new InternalServerErrorException('Failed to fetch questions');
-  //   }
-  // }
-
-  async findAll(pageNumber: number, pageSize: number): Promise<Question[]> {
+  async findAll(pageNumber: number, pageSize: number): Promise<{ totalItems: number, totalPages: number, questions: Question[] }> {
     try {
       // first page -> page 0
       // first page: pageNumber = 1 -> skip: 0 * pageSize = 0
       // second page: pageNumber = 2 -> skip: 1 * pageSize = pageSize
-      return await this.prisma.question.findMany({
-        skip: (pageNumber - 1) * pageSize,
-        take: pageSize,
-        include: { options: true },
-      });
+      const [response, totalItems] = await Promise.all([
+        this.prisma.question.findMany({
+          skip: (pageNumber - 1) * pageSize,
+          take: pageSize,
+          include: { options: true },
+        }),
+        this.prisma.question.count()
+      ]);
+      return {
+        totalItems: totalItems,
+        totalPages: Math.ceil(totalItems / pageSize),
+        questions: response
+      };
     } catch (error) {
       console.error('Error fetching questions:', error);
       throw new InternalServerErrorException('Failed to fetch questions');
     }
   }
 
-  async findAllByExam(examId: string): Promise<Question[]> {
+  async findAllByExam(examId: string, pageNumber: number, pageSize: number): Promise<{ totalItems: number, totalPages: number, questions: Question[] }> {
     try {
-      const questions = await this.prisma.question.findMany({
+      const response = await this.prisma.question.findMany({
+        skip: (pageNumber - 1) * pageSize,
+        take: pageSize,
         where: {
           examQuestions: {
             some: {
@@ -137,7 +136,11 @@ export class QuestionService {
           options: true,
         },
       });
-      return questions;
+      return {
+        totalItems: response.length, 
+        totalPages: Math.ceil(response.length / pageSize),
+        questions: response
+      };
     } catch (error) {
       console.error('Error fetching questions:', error);
       throw new InternalServerErrorException('Failed to fetch questions');

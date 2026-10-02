@@ -15,6 +15,9 @@ import { DatabaseModule } from './database.module';
 import { QuestionService } from './question/question.service';
 import { QuestionController } from './question/question.controller';
 import { QuestionModule } from './question/question.module';
+import { SubmissionService } from './submission/submission.service';
+import { SubmissionController } from './submission/submission.controller';
+import { SubmissionModule } from './submission/submission.module';
 
 @Module({
   imports: [
@@ -25,12 +28,14 @@ import { QuestionModule } from './question/question.module';
     UserModule,
     ExamModule,
     QuestionModule,
+    SubmissionModule,
   ],
   controllers: [
     AppController,
     UserController,
     ExamController,
-    QuestionController
+    QuestionController,
+    SubmissionController
   ],
   providers: [
     AppService,
@@ -38,6 +43,7 @@ import { QuestionModule } from './question/question.module';
     UserService,
     ExamService,
     QuestionService,
+    SubmissionService,
   ],
 })
 export class AppModule {}

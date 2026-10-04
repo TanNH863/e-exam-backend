@@ -1,4 +1,4 @@
-import { IsArray, IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsArray, IsString, IsOptional, IsNumber, IsDate } from 'class-validator';
 
 export class UpdateExamDto {
   @IsOptional()
@@ -10,6 +10,11 @@ export class UpdateExamDto {
   description?: string;
 
   @IsOptional()
+  @IsDate()
+  start_time?: Date;
+
+  @IsOptional()
+  @IsNumber()
   duration_minutes?: number;
 }
 

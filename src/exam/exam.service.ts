@@ -97,6 +97,9 @@ export class ExamService {
       if (updateDto.description !== undefined) {
         updateData.description = updateDto.description;
       }
+      if (updateDto.start_time !== undefined) {
+        updateData.startTime = new Date(updateDto.start_time);
+      }
       if (updateDto.duration_minutes !== undefined) {
         updateData.duration = updateDto.duration_minutes;
       }

@@ -10,6 +10,7 @@ import { DeleteExamCommand } from './commands/delete-exam.command';
 import { GetExamsQuery } from './queries/get-exams.query';
 import { GetExamQuery } from './queries/get-exam.query';
 import { GetUpcomingExamsQuery } from './queries/get-upcoming-exams.query';
+import { GetExamsByStatus } from './queries/get-exams-by-status.query';
 
 @Controller()
 export class ExamController {
@@ -54,5 +55,10 @@ export class ExamController {
     @Body() dto: UpdateQuestionsFromExamDto,
   ): Promise<{ message: string }> {
     return this.commandBus.execute(new UpdateExamQuestionsCommand(id, dto));
+  }
+
+  @Get('exams/status/:status')
+  getExamsByStatus(@Param('status') status: number): Promise<Exam[]> {
+    return this.queryBus.execute(new GetExamsByStatus(status));
   }
 }

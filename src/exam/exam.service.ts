@@ -222,22 +222,4 @@ export class ExamService {
       throw new InternalServerErrorException('Failed to fetch upcoming exams');
     }
   }
-
-  async getExamsByStatus(status: number) {
-    try {
-      return await this.prisma.exam.findMany({
-        where: { status },
-        orderBy: { startTime: 'asc' },
-        include: {
-          examQuestions: {
-            include: { question: { include: { options: true } } },
-            orderBy: { order: 'asc' },
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error fetching exams by status:', error);
-      throw new InternalServerErrorException('Failed to fetch exams by status');
-    }
-  }
 }

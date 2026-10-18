@@ -47,18 +47,3 @@ export class CreateSubmissionDto {
   @IsOptional()
   complete?: boolean;
 }
-
-// expected request body:
-// {
-//   "studentId": "uuid",
-//   "status": 1,
-//   "answers": [
-//     {
-//       "questionId": "uuid",
-//       "chosenOptionId": "uuid",
-//       "chosenOptionIds": ["uuid1", "uuid2"],
-//       "shortAnswerText": "string"
-//     }
-//   ],
-//   "complete": true
-// }

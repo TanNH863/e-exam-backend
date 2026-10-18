@@ -4,11 +4,12 @@ import { DatabaseModule } from '../database.module';
 import { SubmissionController } from './submission.controller';
 import { SubmissionService } from './submission.service';
 import { SubmitExamHandler } from './handlers/submit-exam.handler';
+import { StartExamHandler } from './handlers/start.handler';
 
 @Module({
   imports: [DatabaseModule, CqrsModule],
   controllers: [SubmissionController],
-  providers: [SubmissionService, SubmitExamHandler],
+  providers: [SubmissionService, StartExamHandler, SubmitExamHandler],
   exports: [SubmissionService],
 })
 export class SubmissionModule {}

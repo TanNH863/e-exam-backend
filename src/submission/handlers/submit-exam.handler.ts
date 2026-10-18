@@ -9,6 +9,6 @@ export class SubmitExamHandler implements ICommandHandler<SubmitExamCommand> {
   constructor(private readonly submissionService: SubmissionService) {}
 
   async execute(command: SubmitExamCommand) {
-    return this.submissionService.execute(command.examId, command.dto);
+    return this.submissionService.create(command.examId, command.dto);
   }
 }
